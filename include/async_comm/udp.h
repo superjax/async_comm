@@ -65,7 +65,7 @@ public:
       std::string remote_host = DEFAULT_REMOTE_HOST, uint16_t remote_port = DEFAULT_REMOTE_PORT);
   ~UDP();
 
-private:
+protected:
   static constexpr auto DEFAULT_BIND_HOST = "localhost";
   static constexpr uint16_t DEFAULT_BIND_PORT = 16140;
   static constexpr auto DEFAULT_REMOTE_HOST = "localhost";

@@ -58,6 +58,15 @@
 
 namespace async_comm
 {
+<<<<<<< HEAD
+=======
+class CommListener
+{
+public:
+  virtual void read_cb(const uint8_t* buf, const size_t size) = 0;
+};
+
+>>>>>>> added listener
 /**
  * @class Comm
  * @brief Abstract base class for an asynchronous communication port
@@ -96,17 +105,40 @@ public:
    * @brief Register a callback function for when bytes are received on the port
    *
    * The callback function needs to accept two parameters. The first is of type `const uint8_t*`,
+<<<<<<< HEAD
    * and is a constant pointer to the data buffer. The second is of type `size_t`, and specifies the
    * number of bytes available in the buffer.
    *
    * @warning The data buffer passed to the callback function will be invalid after the callback
    * function exits. If you want to store the data for later processing, you must copy the data to a
    * new buffer rather than storing the pointer to the buffer.
+=======
+   * and is a constant pointer to the data buffer. The second is of type `size_t`, and specifies
+   * the number of bytes available in the buffer.
+   *
+   * @warning The data buffer passed to the callback function will be invalid after the callback
+   * function exits. If you want to store the data for later processing, you must copy the data to
+   * a new buffer rather than storing the pointer to the buffer.
+>>>>>>> added listener
    *
    * @param fun Function to call when bytes are received
    */
   void register_receive_callback(std::function<void(const uint8_t*, size_t)> fun);
 
+<<<<<<< HEAD
+=======
+  /**
+   * @brief Register a listener for when bytes are received on the port
+   *
+   * The listener must inherit from CommListener and implement the `read_cb` function.  This is
+   * another mechanism to receiving data from the Comm interface without needing to create
+   * function pointers.  Multiple listeners can be added and all will get the callback
+   *
+   * @param listener pointer to listener (does not take ownership)
+   */
+  void register_listener(CommListener* listener);
+
+>>>>>>> added listener
 protected:
   virtual bool is_open() = 0;
   virtual bool do_init() = 0;
@@ -154,7 +186,8 @@ private:
   std::list<WriteBuffer*> write_queue_;
   bool write_in_progress_;
 
-  std::function<void(const uint8_t*, size_t)> receive_callback_;
+  std::function<void(const uint8_t*, size_t)> receive_callback_ = nullptr;
+  std::vector<CommListener*> listeners_;
 };
 
 }  // namespace async_comm

@@ -101,6 +101,8 @@ void Comm::async_read()
                             boost::asio::placeholders::bytes_transferred));
 }
 
+void Comm::register_listener(CommListener *listener) { listeners_.push_back(listener); }
+
 void Comm::async_read_end(const boost::system::error_code &error, size_t bytes_transferred)
 {
   if (error)
@@ -110,7 +112,14 @@ void Comm::async_read_end(const boost::system::error_code &error, size_t bytes_t
     return;
   }
 
-  receive_callback_(read_buffer_, bytes_transferred);
+  if (receive_callback_)
+  {
+    receive_callback_(read_buffer_, bytes_transferred);
+  }
+  for (auto &l : listeners_)
+  {
+    l->read_cb(read_buffer_, bytes_transferred);
+  }
 
   async_read();
 }
