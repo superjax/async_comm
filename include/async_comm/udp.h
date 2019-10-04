@@ -43,6 +43,7 @@
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
 
+#include <async_comm/message_handler.h>
 #include <async_comm/comm.h>
 
 namespace async_comm
@@ -56,14 +57,16 @@ class UDP : public Comm
 {
 public:
   /**
-   * @brief Bind a UPD socket
+   * @brief Bind a UDP socket
    * @param bind_host The bind host where this application is listening (usually "localhost")
    * @param bind_port The bind port where this application is listening
    * @param remote_host The remote host to communicate with
    * @param remote_port The port on the remote host
+   * @param message_handler Custom message handler, or omit for default handler
    */
   UDP(std::string bind_host = DEFAULT_BIND_HOST, uint16_t bind_port = DEFAULT_BIND_PORT,
-      std::string remote_host = DEFAULT_REMOTE_HOST, uint16_t remote_port = DEFAULT_REMOTE_PORT);
+      std::string remote_host = DEFAULT_REMOTE_HOST, uint16_t remote_port = DEFAULT_REMOTE_PORT,
+      MessageHandler& message_handler = default_message_handler_);
   ~UDP();
 
 private:

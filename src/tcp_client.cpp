@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD-3 License)
  *
- * Copyright (c) 2018 Daniel Koch.
+ * Copyright (c) 2019 Rein Appeldoorn.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,39 +31,52 @@
  */
 
 /**
- * @file serial.cpp
- * @author Daniel Koch <danielpkoch@gmail.com>
+ * @file tcp_client.cpp
+ * @author Rein Appeldoorn <reinzor@gmail.com>
  */
 
-#include <async_comm/serial.h>
+#include <async_comm/tcp_client.h>
 
-#include<iostream>
+#include <iostream>
 
-using boost::asio::serial_port_base;
+using boost::asio::ip::tcp;
 
 namespace async_comm
 {
 
-Serial::Serial(std::string port, unsigned int baud_rate, MessageHandler& message_handler) :
+TCPClient::TCPClient(std::string host, uint16_t port, MessageHandler& message_handler) :
   Comm(message_handler),
+  host_(host),
   port_(port),
-  baud_rate_(baud_rate),
-  serial_port_(io_service_)
+  socket_(io_service_)
 {
 }
 
-Serial::~Serial()
+TCPClient::~TCPClient()
 {
   do_close();
 }
 
-bool Serial::set_baud_rate(unsigned int baud_rate)
+bool TCPClient::is_open()
 {
-  baud_rate_ = baud_rate;
+  return socket_.is_open();
+}
+
+bool TCPClient::do_init()
+{
   try
   {
-    serial_port_.set_option(serial_port_base::baud_rate(baud_rate_));
-    serial_port_.open(port_);
+    tcp::resolver resolver(io_service_);
+
+    endpoint_ = *resolver.resolve({tcp::v4(), host_, ""});
+    endpoint_.port(port_);
+    socket_.open(tcp::v4());
+
+    socket_.connect(endpoint_);
+
+    socket_.set_option(tcp::socket::reuse_address(true));
+    socket_.set_option(tcp::socket::send_buffer_size(WRITE_BUFFER_SIZE*1024));
+    socket_.set_option(tcp::socket::receive_buffer_size(READ_BUFFER_SIZE*1024));
   }
   catch (boost::system::system_error e)
   {
@@ -74,46 +87,21 @@ bool Serial::set_baud_rate(unsigned int baud_rate)
   return true;
 }
 
-bool Serial::is_open()
+void TCPClient::do_close()
 {
-  return serial_port_.is_open();
+  socket_.close();
 }
 
-bool Serial::do_init()
+void TCPClient::do_async_read(const boost::asio::mutable_buffers_1 &buffer,
+                        boost::function<void(const boost::system::error_code&, size_t)> handler)
 {
-  try
-  {
-    serial_port_.open(port_);
-    serial_port_.set_option(serial_port_base::baud_rate(baud_rate_));
-    serial_port_.set_option(serial_port_base::character_size(8));
-    serial_port_.set_option(serial_port_base::parity(serial_port_base::parity::none));
-    serial_port_.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
-    serial_port_.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
-  }
-  catch (boost::system::system_error e)
-  {
-    message_handler_.error(e.what());
-    return false;
-  }
-
-  return true;
+  socket_.async_receive(buffer, handler);
 }
 
-void Serial::do_close()
+void TCPClient::do_async_write(const boost::asio::const_buffers_1 &buffer,
+                         boost::function<void(const boost::system::error_code&, size_t)> handler)
 {
-  serial_port_.close();
-}
-
-void Serial::do_async_read(const boost::asio::mutable_buffers_1 &buffer,
-                           boost::function<void (const boost::system::error_code&, size_t)> handler)
-{
-  serial_port_.async_read_some(buffer, handler);
-}
-
-void Serial::do_async_write(const boost::asio::const_buffers_1 &buffer,
-                            boost::function<void (const boost::system::error_code&, size_t)> handler)
-{
-  serial_port_.async_write_some(buffer, handler);
+  socket_.async_send(buffer, handler);
 }
 
 } // namespace async_comm

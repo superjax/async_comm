@@ -45,8 +45,9 @@ namespace async_comm
 {
 
 
-UDP::UDP(std::string bind_host, uint16_t bind_port, std::string remote_host, uint16_t remote_port) :
-  Comm(),
+UDP::UDP(std::string bind_host, uint16_t bind_port, std::string remote_host, uint16_t remote_port,
+         MessageHandler& message_handler) :
+  Comm(message_handler),
   bind_host_(bind_host),
   bind_port_(bind_port),
   remote_host_(remote_host),
@@ -81,12 +82,12 @@ bool UDP::do_init()
     socket_.bind(bind_endpoint_);
 
     socket_.set_option(udp::socket::reuse_address(true));
-    socket_.set_option(udp::socket::send_buffer_size(ASYNC_COMM_WRITE_BUFFER_SIZE*1024));
-    socket_.set_option(udp::socket::receive_buffer_size(ASYNC_COMM_READ_BUFFER_SIZE*1024));
+    socket_.set_option(udp::socket::send_buffer_size(WRITE_BUFFER_SIZE*1024));
+    socket_.set_option(udp::socket::receive_buffer_size(READ_BUFFER_SIZE*1024));
   }
   catch (boost::system::system_error e)
   {
-    std::cerr << e.what() << std::endl;
+    message_handler_.error(e.what());
     return false;
   }
 
